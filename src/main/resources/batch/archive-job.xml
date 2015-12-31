@@ -25,7 +25,7 @@
 				<entry key="processedStatus" value="processed" />
 			</map>
 		</property>
-		<property name="pageSize" value="100" />
+		<property name="pageSize" value="10000" />
 		<property name="rowMapper">
 			<bean class="org.akm.integration.report.WbsRowMapper" />
 		</property>
