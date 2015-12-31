@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:batch="http://www.springframework.org/schema/batch" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/batch http://www.springframework.org/schema/batch/spring-batch-3.0.xsd
+						http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+						http://www.springframework.org/schema/util	http://www.springframework.org/schema/util/spring-util-3.2.xsd">
+
+	<import resource="application-context.xml" />
+	<import resource="datasource.xml" />
+
+	<bean id="pagingItemReader" class="org.springframework.batch.item.database.JdbcPagingItemReader" scope="step">
+		<property name="dataSource" ref="dataSource" />
+		<property name="queryProvider">
+			<bean class="org.springframework.batch.item.database.support.SqlPagingQueryProviderFactoryBean">
+				<property name="dataSource" ref="dataSource" />
+				<property name="selectClause" value="select client_id, wbs_element, wbs_element_description, company_code" />
+				<property name="fromClause" value="from wbs_element" />
+				<property name="whereClause" value="where processed_status=:processedStatus" />
+				<property name="sortKey" value="client_id" />
+			</bean>
+		</property>
+		<property name="parameterValues">
+			<map>
+				<entry key="processedStatus" value="processed" />
+			</map>
+		</property>
+		<property name="pageSize" value="10000" />
+		<property name="rowMapper">
+			<bean class="com.vroozi.api.integration.report.WbsRowMapper" />
+		</property>
+	</bean>
+
+	<job id="archiveJob" xmlns="http://www.springframework.org/schema/batch">
+		<step id="readProcessedStatusStep">
+			<tasklet>
+				<chunk reader="pagingItemReader" writer="itemWriter" commit-interval="1" />
+			</tasklet>
+		</step>
+	</job>
+	
+	<bean id="itemWriter" class="org.springframework.batch.item.xml.StaxEventItemWriter">
+		<property name="resource" value="file:/home/anish/Desktop/wbs-elements.xml" />
+		<property name="marshaller" ref="wbsElementUnmarshaller" />
+		<property name="rootTagName" value="wbsElements" />
+	</bean>
+	
+	<bean id="wbsElementUnmarshaller" class="org.springframework.oxm.xstream.XStreamMarshaller">
+		<property name="aliases">
+			<util:map id="aliases">
+				<entry key="wbsElement" value="com.vroozi.api.integration.report.WbsElementDto" />
+			</util:map>
+		</property>
+	</bean>
+
+</beans>
