@@ -34,16 +34,25 @@
 	<job id="archiveJob" xmlns="http://www.springframework.org/schema/batch">
 		<step id="readProcessedStatusStep">
 			<tasklet>
-				<chunk reader="pagingItemReader" writer="itemWriter" commit-interval="1" />
+				<chunk reader="pagingItemReader" writer="mysqlItemWriter" commit-interval="1" />
 			</tasklet>
 		</step>
 	</job>
 	
-	<bean id="itemWriter" class="org.springframework.batch.item.xml.StaxEventItemWriter">
-		<property name="resource" value="file:/home/anish/Desktop/wbs-elements.xml" />
-		<property name="marshaller" ref="wbsElementUnmarshaller" />
-		<property name="rootTagName" value="wbsElements" />
-	</bean>
+	<bean id="mysqlItemWriter" class="org.springframework.batch.item.database.JdbcBatchItemWriter">
+	<property name="dataSource" ref="dataSource" />
+	<property name="sql">
+	  <value>
+            <![CDATA[        
+            	insert into tb_test(name) values (:code)
+            ]]>
+	  </value>
+	</property>
+
+	<property name="itemSqlParameterSourceProvider">
+		<bean class="org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider" />
+	</property>
+  </bean>
 	
 	<bean id="wbsElementUnmarshaller" class="org.springframework.oxm.xstream.XStreamMarshaller">
 		<property name="aliases">
