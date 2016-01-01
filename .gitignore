@@ -1,0 +1,10 @@
+.classpath
+.project
+.settings
+.springBeans
+target
+/target/
+log.location*
+.idea
+integration-api.iml
+/src/main/resources/rebel.xml
