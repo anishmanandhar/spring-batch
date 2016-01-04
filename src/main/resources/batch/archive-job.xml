@@ -8,8 +8,19 @@
 
 	<import resource="application-context.xml" />
 	<import resource="datasource.xml" />
+	
 
-	<!-- Mysql rows reader task  -->
+	<!-- configuring job to maintain its state in mysql -->
+	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+	
+	<batch:job-repository id="jobRepository" data-source="dataSource" transaction-manager="transactionManager" />
+	
+	<bean id="jobLauncher" class="org.springframework.batch.core.launch.support.SimpleJobLauncher">
+		<property name="jobRepository" ref="jobRepository" />
+	</bean>
+	
 	<bean id="pagingItemReader" class="org.springframework.batch.item.database.JdbcPagingItemReader" scope="step">
 		<property name="dataSource" ref="dataSource" />
 		<property name="queryProvider">
@@ -48,7 +59,6 @@
 		</property>
 	</bean>
 	
-	
 	<!-- Mysql rows deleter task  -->
 	<bean id="mysqlItemDeleter" class="org.springframework.batch.item.database.JdbcBatchItemWriter">
 		<property name="dataSource" ref="dataSource" />
@@ -64,13 +74,8 @@
 			<bean class="org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider" />
 		</property>
 	</bean>
-	
-	
-	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
-        <property name="dataSource" ref="dataSource"/>   
-    </bean>
 
-	<job id="archiveJob" xmlns="http://www.springframework.org/schema/batch">
+	<job id="archiveJob" xmlns="http://www.springframework.org/schema/batch" >
 		<step id="readProcessedStatusStep" next="deleteProcessedStatusStep">
 			<tasklet transaction-manager="transactionManager">
 				<chunk reader="pagingItemReader" writer="mysqlItemWriter" commit-interval="10000" />
